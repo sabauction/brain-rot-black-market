@@ -1,58 +1,202 @@
-local AuctionManager = {
-    CurrentItem = nil,
-    HighestBid = 0,
-    HighestBidder = nil,
-    TimeRemaining = 0,
-    IsAuctionActive = false
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BRAINROT BLACK MARKET</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #0f0;
+            font-family: 'Courier New', Courier, monospace;
+            text-align: center;
+            overflow-x: hidden;
+            margin: 0;
+        }
 
--- Function to start an auction
-function AuctionManager:StartAuction(brainrotItem, duration)
-    self.CurrentItem = brainrotItem
-    self.HighestBid = brainrotItem.BaseValue or 100
-    self.HighestBidder = nil
-    self.TimeRemaining = duration
-    self.IsAuctionActive = true
-    
-    print("Auction started for: " .. brainrotItem.Name)
-end
+        .header {
+            background: linear-gradient(90deg, #ff00ff, #00ffff);
+            color: #000;
+            padding: 15px;
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            animation: flash 0.5s infinite;
+        }
 
--- Function to handle a new bid
-function AuctionManager:PlaceBid(player, amount)
-    if not self.IsAuctionActive then return false, "No active auction" end
-    if amount <= self.HighestBid then return false, "Bid too low" end
-    
-    -- Update lead
-    self.HighestBid = amount
-    self.HighestBidder = player
-    
-    -- "Steal" Mechanic: Reset/Extend timer when a bid is placed
-    self.TimeRemaining = math.max(self.TimeRemaining, 5) -- Give others 5 seconds to outbid
-    
-    return true, "Bid placed!"
-end
-task.spawn(function()
-    while true do
-        if AuctionManager.IsAuctionActive then
-            if AuctionManager.TimeRemaining > 0 then
-                task.wait(1)
-                AuctionManager.TimeRemaining -= 1
-            else
-                -- Auction Ended!
-                AuctionManager:EndAuction()
-            end
-        end
-        task.wait(0.1)
-    end
-end)
+        @keyframes flash {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
 
-function AuctionManager:EndAuction()
-    self.IsAuctionActive = false
-    if self.HighestBidder then
-        print(self.HighestBidder.Name .. " won the " .. self.CurrentItem.Name)
-        -- CODE HERE: Transfer the Brainrot to the player's base/inventory
-    else
-        print("Auction ended with no winner.")
-    end
-end
+        /* Profile Section */
+        .profile-box {
+            background: #222;
+            padding: 15px;
+            border-bottom: 2px solid #0f0;
+            margin-bottom: 20px;
+        }
 
+        input[type="text"] {
+            background: #000;
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 8px;
+            font-family: 'Courier New', monospace;
+            outline: none;
+        }
+
+        .auction-card {
+            border: 5px solid #0f0;
+            margin: 20px auto;
+            width: 85%;
+            max-width: 500px;
+            padding: 20px;
+            background: #111;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+        }
+
+        .item-image {
+            font-size: 5rem;
+            margin: 20px 0;
+            filter: drop-shadow(0 0 10px #ff00ff);
+        }
+
+        .timer {
+            font-size: 4rem;
+            color: #ff0000;
+            text-shadow: 0 0 15px #ff0000;
+            margin: 10px 0;
+        }
+
+        .bid-info {
+            font-size: 1.3rem;
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+
+        .bid-button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 20px 40px;
+            font-size: 1.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 20px #0f0;
+            text-transform: uppercase;
+            transition: 0.1s;
+        }
+
+        .bid-button:active {
+            transform: scale(0.9);
+            background: #fff;
+        }
+
+        .ticker {
+            background: #111;
+            padding: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            border-top: 2px solid #ff00ff;
+        }
+
+        .ticker-text {
+            display: inline-block;
+            animation: scroll 15s linear infinite;
+            color: #ff00ff;
+            font-weight: bold;
+        }
+
+        @keyframes scroll {
+            from { transform: translateX(100%); }
+            to { transform: translateX(-100%); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">⚠️ BRAINROT BLACK MARKET ⚠️</div>
+
+    <div class="profile-box">
+        <label>ENTER RIZZLER NAME: </label>
+        <input type="text" id="usernameInput" placeholder="Anonymous Hacker" maxlength="15">
+    </div>
+
+    <div class="auction-card">
+        <h2 style="color: #ff00ff;">CURRENT AUCTION</h2>
+        <div class="item-image">💎</div>
+        <h1 id="itemName">POSITIVE RIZZ VIAL</h1>
+        
+        <div class="timer" id="timer">15s</div>
+        
+        <div class="bid-info">
+            CURRENT PRICE: <span style="color: #0f0;">$</span><span id="currentBid">500</span><br>
+            TOP BIDDER: <span id="highestBidder" style="color: #00ffff;">THE VOID</span>
+        </div>
+
+        <button class="bid-button" onclick="placeBid()">STEAL BID</button>
+    </div>
+
+    <div class="ticker">
+        <div class="ticker-text">
+            NO CAP... FR FR... YOU JUST GOT FANUM TAXED... SKIBIDI TOILET AT 3AM... GOING ONCE... GOING TWICE...
+        </div>
+    </div>
+
+    <script>
+        let bid = 500;
+        let timeLeft = 15;
+        let auctionActive = true;
+
+        function placeBid() {
+            if(!auctionActive) return;
+
+            // Get the name from the input, or use a default if empty
+            let playerName = document.getElementById('usernameInput').value.trim();
+            if (playerName === "") {
+                playerName = "Anonymous Rizzler";
+            }
+
+            bid += 100; // Increase bid by $100
+            timeLeft = 15; // Reset the "Steal" timer
+            
+            // Update UI
+            document.getElementById('currentBid').innerText = bid;
+            document.getElementById('highestBidder').innerText = playerName.toUpperCase();
+            document.getElementById('timer').style.color = "#0f0";
+            
+            // Glitch Effect
+            document.body.style.filter = "invert(1)";
+            setTimeout(() => {
+                document.body.style.filter = "none";
+            }, 50);
+        }
+
+        // Timer Loop
+        const countdown = setInterval(() => {
+            if(timeLeft > 0) {
+                timeLeft--;
+                document.getElementById('timer').innerText = timeLeft + "s";
+                
+                if(timeLeft <= 5) {
+                    document.getElementById('timer').style.color = "#ff0000";
+                    document.getElementById('timer').style.fontSize = "5rem";
+                } else {
+                    document.getElementById('timer').style.fontSize = "4rem";
+                }
+            } else if (auctionActive) {
+                auctionActive = false;
+                let finalWinner = document.getElementById('highestBidder').innerText;
+                document.getElementById('timer').innerText = "SOLD!";
+                document.getElementById('timer').style.color = "#ff00ff";
+                alert("AUCTION CLOSED! " + finalWinner + " BOUGHT THE RIZZ!");
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
