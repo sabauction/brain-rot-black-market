@@ -31,3 +31,28 @@ function AuctionManager:PlaceBid(player, amount)
     
     return true, "Bid placed!"
 end
+task.spawn(function()
+    while true do
+        if AuctionManager.IsAuctionActive then
+            if AuctionManager.TimeRemaining > 0 then
+                task.wait(1)
+                AuctionManager.TimeRemaining -= 1
+            else
+                -- Auction Ended!
+                AuctionManager:EndAuction()
+            end
+        end
+        task.wait(0.1)
+    end
+end)
+
+function AuctionManager:EndAuction()
+    self.IsAuctionActive = false
+    if self.HighestBidder then
+        print(self.HighestBidder.Name .. " won the " .. self.CurrentItem.Name)
+        -- CODE HERE: Transfer the Brainrot to the player's base/inventory
+    else
+        print("Auction ended with no winner.")
+    end
+end
+
