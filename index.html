@@ -3,108 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BRAINROT BLACK MARKET | SECURE</title>
+    <title>BuyRot | #1 Brainrot Marketplace</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <style>
-        body { background-color: #121212; color: white; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; }
-        
-        /* Login Overlay */
-        #loginOverlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 100; display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
+        :root {
+            --bg-dark: #0f111a;
+            --card-bg: #1a1d29;
+            --accent: #3b82f6; /* Modern Blue */
+            --success: #22c55e;
+            --danger: #ef4444;
+            --text-main: #ffffff;
+            --text-dim: #94a3b8;
         }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding-top: 70px; /* Space for fixed navbar */
+        }
+
+        /* --- NAVIGATION --- */
+        .navbar {
+            background: rgba(26, 29, 41, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0; width: 90%;
+            z-index: 1000;
+            border-bottom: 1px solid #2d3142;
+        }
+
+        .logo { font-size: 1.5rem; font-weight: 800; color: var(--accent); text-decoration: none; }
+        .nav-links a { color: var(--text-dim); text-decoration: none; margin-left: 20px; font-weight: 500; }
+        .nav-links a:hover { color: #fff; }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            padding: 60px 5%;
+            text-align: center;
+            background: radial-gradient(circle at center, #1e293b 0%, var(--bg-dark) 100%);
+        }
+
+        .hero h1 { font-size: 3rem; margin-bottom: 10px; }
+        .hero p { color: var(--text-dim); font-size: 1.2rem; }
+
+        /* --- PRODUCT GRID --- */
+        .container { padding: 40px 5%; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 25px; }
+
+        .item-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid #2d3142;
+        }
+
+        .item-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-color: var(--accent);
+        }
+
+        .sale-badge {
+            position: absolute; top: 12px; left: 12px;
+            background: var(--danger); font-size: 0.7rem; font-weight: bold;
+            padding: 4px 8px; border-radius: 6px;
+        }
+
+        .item-img { font-size: 5rem; margin: 20px 0; display: block; }
         
-        .login-card { background: #222; padding: 40px; border-radius: 10px; border: 1px solid #444; width: 300px; }
-        input { width: 90%; padding: 10px; margin: 10px 0; background: #333; border: 1px solid #555; color: white; }
-        .btn { background: #d12121; color: white; border: none; padding: 10px 20px; cursor: pointer; width: 100%; font-weight: bold; }
+        .item-title { font-weight: 600; font-size: 1.1rem; margin: 10px 0; }
 
-        /* Item Selection Grid */
-        #selectionMenu { display: none; padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; padding: 20px; }
-        .item-box { background: #1e1e1e; border: 2px solid #333; padding: 20px; border-radius: 10px; cursor: pointer; }
-        .item-box:hover { border-color: #ffd700; }
+        .price-container { margin: 15px 0; }
+        .old-price { color: var(--text-dim); text-decoration: line-through; font-size: 0.9rem; margin-right: 8px; }
+        .new-price { color: var(--success); font-weight: 800; font-size: 1.3rem; }
 
-        /* Real Money Info */
-        .premium-tag { color: #ffd700; font-size: 0.8rem; font-weight: bold; border: 1px solid #ffd700; padding: 2px 5px; border-radius: 4px; }
+        .buy-btn {
+            background: var(--accent);
+            color: white; border: none; width: 100%;
+            padding: 12px; border-radius: 8px; font-weight: bold;
+            cursor: pointer; transition: 0.2s;
+        }
+
+        .buy-btn:hover { background: #2563eb; }
+
+        /* --- LOGIN MODAL --- */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: flex; align-items: center;
+            justify-content: center; z-index: 2000;
+        }
+        .login-box { background: var(--card-bg); padding: 40px; border-radius: 20px; width: 320px; border: 1px solid #333; }
+        input { width: 100%; padding: 12px; margin: 10px 0; background: #0f111a; border: 1px solid #333; color: white; border-radius: 8px; box-sizing: border-box;}
     </style>
 </head>
 <body>
 
-    <div id="loginOverlay">
-        <div class="login-card">
-            <h2>MARKET ACCESS</h2>
-            <input type="text" id="user" placeholder="Username">
-            <input type="password" id="pass" placeholder="Password">
-            <button class="btn" onclick="login()">SIGN IN</button>
-            <p style="font-size: 0.7rem; color: #666; margin-top: 15px;">Secure Brainrot Connection v2.1</p>
+    <nav class="navbar">
+        <a href="#" class="logo">BUYROT</a>
+        <div class="nav-links">
+            <a href="#">SAB Items</a>
+            <a href="#">MM2</a>
+            <a href="#">Support</a>
+            <a href="#" id="auth-btn" onclick="toggleModal()">Login</a>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <h1>#1 Brainrot Marketplace</h1>
+        <p>Get your dream SAB items delivered instantly ⚡</p>
+    </header>
+
+    <div class="container">
+        <div class="item-card">
+            <span class="sale-badge">-92%</span>
+            <span class="item-img">🚽</span>
+            <div class="item-title">Golden Skibidi</div>
+            <div class="price-container">
+                <span class="old-price">$99.99</span>
+                <span class="new-price">$7.50</span>
+            </div>
+            <button class="buy-btn" onclick="openAuction('Golden Skibidi', 7.50)">BID NOW</button>
+        </div>
+
+        <div class="item-card">
+            <span class="sale-badge">-85%</span>
+            <span class="item-img">🍑</span>
+            <div class="item-title">Level 10 Gyatt</div>
+            <div class="price-container">
+                <span class="old-price">$39.99</span>
+                <span class="new-price">$4.99</span>
+            </div>
+            <button class="buy-btn" onclick="openAuction('Level 10 Gyatt', 4.99)">BID NOW</button>
+        </div>
+
+        <div class="item-card">
+            <span class="sale-badge">-70%</span>
+            <span class="item-img">🍕</span>
+            <div class="item-title">Fanum Tax Receipt</div>
+            <div class="price-container">
+                <span class="old-price">$10.00</span>
+                <span class="new-price">$2.99</span>
+            </div>
+            <button class="buy-btn" onclick="openAuction('Fanum Tax', 2.99)">BID NOW</button>
         </div>
     </div>
 
-    <div id="selectionMenu">
-        <h1>SELECT AN AUCTION</h1>
-        <p>Your Balance: <span style="color: #0f0;">$0.00 (USD)</span></p>
-        <button class="btn" style="width: auto; background: #222; border: 1px solid #ffd700;" onclick="alert('Redirecting to Stripe/PayPal...')">Add Funds (Real Money)</button>
-        
-        <div class="grid">
-            <div class="item-box" onclick="startSpecificAuction('Golden Skibidi', '🚽', 50.00)">
-                <span class="premium-tag">PREMIUM</span>
-                <div style="font-size: 3rem;">🚽</div>
-                <h3>Golden Skibidi</h3>
-                <p>Starting: $50.00</p>
-            </div>
-            <div class="item-box" onclick="startSpecificAuction('Level 10 Gyatt', '🍑', 25.00)">
-                <div style="font-size: 3rem;">🍑</div>
-                <h3>Level 10 Gyatt</h3>
-                <p>Starting: $25.00</p>
-            </div>
-            <div class="item-box" onclick="startSpecificAuction('Fanum Tax Original', '🍕', 10.00)">
-                <div style="font-size: 3rem;">🍕</div>
-                <h3>Fanum Tax</h3>
-                <p>Starting: $10.00</p>
-            </div>
+    <div id="loginModal" class="modal" style="display: none;">
+        <div class="login-box">
+            <h2>Welcome Back</h2>
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Password">
+            <button class="buy-btn" onclick="handleAuth()">Sign In</button>
+            <p style="font-size: 0.8rem; color: #666; cursor: pointer;" onclick="toggleModal()">Close</p>
         </div>
-    </div>
-
-    <div id="auctionStage" style="display: none;">
-        <h2 id="displayItemName">ITEM</h2>
-        <div id="displayEmoji" style="font-size: 100px;">❓</div>
-        <div style="font-size: 3rem; color: red;" id="timer">10.0</div>
-        <h1 style="color: #ffd700;">$<span id="currentBid">0.00</span></h1>
-        <p>Highest Bidder: <span id="currentBidder">NONE</span></p>
-        <button class="btn" style="font-size: 2rem; padding: 20px;" onclick="placeRealBid()">STEAL BID (+$5.00)</button>
-        <br><br>
-        <button onclick="location.reload()">Back to Menu</button>
     </div>
 
     <script>
-        let currentUser = "";
-        let currentPrice = 0;
+        // Simple UI Toggle for Modal
+        function toggleModal() {
+            const m = document.getElementById('loginModal');
+            m.style.display = m.style.display === 'none' ? 'flex' : 'none';
+        }
 
-        function login() {
-            const u = document.getElementById('user').value;
-            const p = document.getElementById('pass').value;
-            if (u && p) {
-                currentUser = u;
-                document.getElementById('loginOverlay').style.display = "none";
-                document.getElementById('selectionMenu').style.display = "block";
-            } else {
-                alert("Enter user and password!");
+        function openAuction(name, price) {
+            alert("Starting secure bidding for " + name + " at $" + price);
+            // Here you would redirect to the auction stage we built earlier
+        }
+
+        function handleAuth() {
+            // Placeholder for Firebase Login
+            const email = document.getElementById('email').value;
+            if(email) {
+                document.getElementById('auth-btn').innerText = email.split('@')[0];
+                toggleModal();
             }
-        }
-
-        function startSpecificAuction(name, emoji, price) {
-            document.getElementById('selectionMenu').style.display = "none";
-            document.getElementById('auctionStage').style.display = "block";
-            document.getElementById('displayItemName').innerText = name;
-            document.getElementById('displayEmoji').innerText = emoji;
-            currentPrice = price;
-            document.getElementById('currentBid').innerText = currentPrice.toFixed(2);
-        }
-
-        function placeRealBid() {
-            currentPrice += 5.00;
-            document.getElementById('currentBid').innerText = currentPrice.toFixed(2);
-            document.getElementById('currentBidder').innerText = currentUser.toUpperCase();
         }
     </script>
 </body>
